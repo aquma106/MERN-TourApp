@@ -1,0 +1,113 @@
+.newsletter {
+    max-width: 100%;
+    background: #cae5f4;
+    padding: 0;
+    margin-top: 3rem;
+}
+
+.newsletter__img img {
+    max-width: 100%;
+    height: auto;
+}
+
+.newsletter__content {
+    padding: 50px 2rem;
+    text-align: center;
+}
+
+.newsletter__content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: var(--heading-color);
+}
+
+.newsletter__input {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    padding: 0.5rem;
+    margin-bottom: 2rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.newsletter__input input {
+    border: none;
+    font-size: 1rem;
+    color: var(--heading-color);
+    flex: 1;
+    margin-right: 10px;
+}
+
+.newsletter__input input:focus {
+    outline: none;
+}
+
+.newsletter__btn {
+    padding: 0.5rem 1.5rem !important;
+    background: var(--secondary-color) !important;
+    color: #fff !important;
+    font-size: 1.1rem !important;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.newsletter__btn:hover {
+    background: var(--heading-color) !important;
+}
+
+.newsletter__content p {
+    color: var(--heading-color);
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+/* Responsive Design */
+
+/* Medium Devices (Tablets) */
+@media only screen and (max-width: 992px) {
+    .newsletter__content h2 {
+        font-size: 2rem;
+    }
+
+    .newsletter__img {
+        display: none;
+    }
+
+    .newsletter__content {
+        padding: 40px 1.5rem;
+    }
+}
+
+/* Small Devices (Smartphones) */
+@media only screen and (max-width: 576px) {
+    .newsletter__content h2 {
+        font-size: 1.5rem;
+    }
+
+    .newsletter__content p {
+        display: none;
+    }
+
+    .newsletter__input {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .newsletter__input input {
+        margin: 0 0 10px 0;
+        font-size: 0.9rem;
+    }
+
+    .newsletter__btn {
+        font-size: 1rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .newsletter {
+        margin-top: 2rem;
+    }
+}
