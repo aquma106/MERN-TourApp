@@ -15,14 +15,12 @@ import FeaturedToursList from "../components/Featured-tours/FeaturedToursList";
 import MasonryImagesGallery from "../components/Image-gallery/MasonryImagesGallery";
 import Testimonials from "../components/Testimonial/Testimonials";
 import Newsletter from "../shared/Newsletter";
-import { ToastContainer } from "react-toastify";
 
 const Home = () => {
   return (
     <>
       <section>
         <Container>
-        <ToastContainer/>
           <Row>
             <Col lg="6">
               <div className="hero__content">
