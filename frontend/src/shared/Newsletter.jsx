@@ -4,7 +4,7 @@ import "./newsletter.css";
 import { Container, Row, Col } from "reactstrap";
 import maleTourist from "../assets/images/male-tourist.png";
 import { BASE_URL } from "../utils/config";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
@@ -42,7 +42,6 @@ const Newsletter = () => {
       <Container>
         <Row>
           <Col lg="6">
-          <form>
             <div className="newsletter__content">
               <h2>Subscribe to get useful traveling information.</h2>
 
@@ -61,7 +60,7 @@ const Newsletter = () => {
                 </button>
               </div>
             </div>
-            </form>
+            
           </Col>
           <Col lg="6">
             <div className="newsletter__img">
@@ -69,6 +68,7 @@ const Newsletter = () => {
             </div>
           </Col>
         </Row>
+        <ToastContainer/>
       </Container>
     </section>
   );

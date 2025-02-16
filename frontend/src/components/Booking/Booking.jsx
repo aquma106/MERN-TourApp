@@ -4,12 +4,12 @@ import { Form, FormGroup, ListGroup, ListGroupItem, Button } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { BASE_URL } from "../../utils/config";
-import { toast } from "react-toastify";
 
 const Booking = ({ tour, avgRating }) => {
+  const [paymentStatus, setPaymentStatus] = useState("");
+
   const { price, reviews, title } = tour;
   const navigate = useNavigate();
-
   const { user } = useContext(AuthContext);
 
   const [booking, setBooking] = useState({
@@ -20,45 +20,120 @@ const Booking = ({ tour, avgRating }) => {
     phone: "",
     guestSize: 1,
     bookAt: "",
-    totalAmount: price * 1 + 10, // default total amount
+    totalAmount: price * 1 + 10,
   });
+
+  const serviceFee = 10;
+  const totalAmount = Number(price) * Number(booking.guestSize) + Number(serviceFee);
+
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const handleChange = (e) => {
     setBooking((prev) => ({ ...prev, [e.target.id]: e.target.value }));
   };
 
-  const serviceFee = 10;
-  const totalAmount =
-    Number(price) * Number(booking.guestSize) + Number(serviceFee);
+  const handleRazorpayPayment = async (e) => {
+    e.preventDefault();
 
-  const handleCheckout = async () => {
-    
-    if (!user) {
-      toast.error("Please sign in to proceed with booking.");
+    if (!user || user === undefined || user === null) {
+      setPaymentStatus("Please sign in first!");
+      return;
+    }
+
+    const isScriptLoaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+
+    if (!isScriptLoaded) {
+      setPaymentStatus("Failed to load Razorpay SDK. Please check your internet connection.");
       return;
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/booking/create-checkout-session`, {
+      // Create Razorpay Order
+      const response = await fetch(`${BASE_URL}/booking/create-payment-intent`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          totalAmount,
-          tourName: booking.tourName,
-          userEmail: booking.userEmail,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ totalAmount: totalAmount  }), // Amount in paise
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
-      } else {
-        toast.error(data.error || "Unable to process payment.");
+      if (!data || !data.orderId) {
+        setPaymentStatus("Failed to create Razorpay order. Please try again.");
+        return;
       }
+
+      const options = {
+        key: "rzp_test_IUa83CdYBGUAFr", // Replace with your Razorpay key ID
+        amount: data.amount,
+        currency: data.currency,
+        name: "Tour Booking",
+        description: "Book your tour now!",
+        order_id: data.orderId,
+        handler: async (response) => {
+          // Verify payment on the backend
+          const verifyResponse = await fetch(`${BASE_URL}/booking/verify-payment`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(response),
+          });
+
+          const result = await verifyResponse.json();
+
+          if (result.success) {
+            setPaymentStatus("Payment successful!");
+            // Save booking data
+            try {
+              const bookingData = { ...booking, totalAmount };
+              const res = await fetch(`${BASE_URL}/booking`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify(bookingData),
+              });
+
+              const bookingResult = await res.json();
+
+              if (!res.ok) {
+                setPaymentStatus(bookingResult.message);
+                return;
+              }
+
+              navigate("/thank-you");
+            } catch (error) {
+              setPaymentStatus("Failed to save booking. Please try again.");
+            }
+          } else {
+            setPaymentStatus("Payment verification failed. Please try again.");
+          }
+        },
+        prefill: {
+          name: booking.fullName,
+          email: user.email,
+          contact: booking.phone,
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      setPaymentStatus(`Error: ${error.message}`);
     }
   };
 
@@ -69,14 +144,13 @@ const Booking = ({ tour, avgRating }) => {
           ₹{price} <span>/per person</span>
         </h3>
         <span className="tour__rating d-flex align-items-center">
-          <i className="ri-star-s-fill"></i>{" "}
-          {avgRating === 0 ? null : avgRating} ({reviews?.length})
+          <i className="ri-star-s-fill"></i> {avgRating === 0 ? null : avgRating} ({reviews?.length})
         </span>
       </div>
 
       <div className="booking__form">
         <h5>Information</h5>
-        <Form className="booking__info-form">
+        <Form className="booking__info-form" onSubmit={handleRazorpayPayment}>
           <FormGroup>
             <input
               type="text"
@@ -98,6 +172,7 @@ const Booking = ({ tour, avgRating }) => {
           <FormGroup className="d-flex align-items-center gap-3">
             <input
               type="date"
+              placeholder=""
               id="bookAt"
               required
               onChange={handleChange}
@@ -117,9 +192,9 @@ const Booking = ({ tour, avgRating }) => {
         <ListGroup>
           <ListGroupItem className="border-0 px-0">
             <h5 className="d-flex align-items-center gap-1">
-              ₹{price} <i className="ri-close-line"></i> {booking.guestSize} guest(s)
+              ₹{price} <i className="ri-close-line"></i> 1 person
             </h5>
-            <span>₹{Number(price) * Number(booking.guestSize)}</span>
+            <span>₹{price}</span>
           </ListGroupItem>
           <ListGroupItem className="border-0 px-0">
             <h5>Service charge</h5>
@@ -130,9 +205,22 @@ const Booking = ({ tour, avgRating }) => {
             <span>₹{totalAmount}</span>
           </ListGroupItem>
         </ListGroup>
-        <Button className="btn primary__btn w-100 mt-4" onClick={handleCheckout}>
-          Pay with Stripe
+
+        <Button className="btn primary__btn w-100 mt-4" onClick={handleRazorpayPayment}>
+          Book Now
         </Button>
+        {paymentStatus && (
+          <p
+            className="mt-2 text-center"
+            style={{
+              color: paymentStatus.includes("failed") || paymentStatus.includes("Error")
+                ? "#dc3545"
+                : "#28a745",
+            }}
+          >
+            {paymentStatus}
+          </p>
+        )}
       </div>
     </div>
   );

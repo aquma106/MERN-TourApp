@@ -30,8 +30,9 @@
 
 .tour__extra-details{
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    column-gap: 2.7rem;
+    column-gap: 2rem;
     margin-top: 1rem;
     margin-bottom: 2.5rem;
 }
